@@ -15,12 +15,11 @@ public class FTPServer {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        ThreadPooledServer server = new ThreadPooledServer(21);
-        new Thread(server).start();
+        //ThreadPooledServer server = new ThreadPooledServer(21);
+        //new Thread(server).start();
         
         
-        while (true) {
-        }
+        
     }
 
 }

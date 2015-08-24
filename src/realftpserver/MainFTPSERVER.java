@@ -5,7 +5,12 @@
  */
 package realftpserver;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JOptionPane;
@@ -23,10 +28,12 @@ public class MainFTPSERVER extends javax.swing.JFrame {
      */
     public MainFTPSERVER() {
         initComponents();
-        server = new ThreadPooledServer(21);
-        new Thread(server).start();
-        startTable("C:\\FTP\\DATA");
         users = new HashMap();
+        server = new ThreadPooledServer(21,users);
+        Read();
+        new Thread(server).start();
+        startTable(ThreadPooledServer.HOME_DIR);
+        
     }
 
     /**
@@ -214,6 +221,11 @@ public class MainFTPSERVER extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         jButton1.setText("Crear Usuario");
         jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -274,7 +286,7 @@ public class MainFTPSERVER extends javax.swing.JFrame {
 
     private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
         // Se crea el nuevo usuario
-            File dir = new File("C:\\FTP\\DATA\\"+username_field.getText());
+            File dir = new File(ThreadPooledServer.HOME_DIR+"\\"+username_field.getText());
             if (!dir.exists()) {
             try{
                 dir.mkdir();
@@ -283,10 +295,12 @@ public class MainFTPSERVER extends javax.swing.JFrame {
                 //handle it
             }        
             }
-            UserAccount user = new UserAccount(username_field.getText(),password_field.getText(),"C:\\FTP\\DATA\\"+username_field.getText());
+            server.addUserDir(username_field.getText());
+            UserAccount user = new UserAccount(username_field.getText(),password_field.getText(),ThreadPooledServer.HOME_DIR+"\\"+username_field.getText());
             this.server.setusers(user);
-            this.users.put(evt, evt);
-            JOptionPane.showMessageDialog(this, "El usuario fue ingresado correctamente.", "Nuevo usuario", JOptionPane.INFORMATION_MESSAGE);
+            //this.users.put(evt, evt);
+            usersarray.add(user);
+            JOptionPane.showMessageDialog(this.CrearUsuario, "El usuario fue ingresado correctamente.", "Nuevo usuario", JOptionPane.INFORMATION_MESSAGE);
             CrearUsuario.setVisible(false);
             fullname_field.setText("");
             username_field.setText("");
@@ -294,7 +308,7 @@ public class MainFTPSERVER extends javax.swing.JFrame {
             password_field.setText("");
             password2_field.setText("");
             
-            startTable("C:\\FTP\\DATA");
+            startTable(ThreadPooledServer.HOME_DIR);
             
             
            
@@ -340,6 +354,11 @@ public class MainFTPSERVER extends javax.swing.JFrame {
     private void fileTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_fileTable1MouseClicked
         // TODO add your handling code here:
     }//GEN-LAST:event_fileTable1MouseClicked
+
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        // TODO add your handling code here:
+        write();
+    }//GEN-LAST:event_formWindowClosing
 
     /**
      * @param args the command line arguments
@@ -441,6 +460,69 @@ private void startTable2(String path) {
 
         fileTable1.setModel(model);
     }
-    
+private void Read(){
+    File archivo = null;
+      FileReader fr = null;
+      BufferedReader br = null;
+ 
+      try {
+         // Apertura del fichero y creacion de BufferedReader para poder
+         // hacer una lectura comoda (disponer del metodo readLine()).
+         archivo = new File ("./guardado.txt");
+         fr = new FileReader (archivo);
+         br = new BufferedReader(fr);
+ 
+         // Lectura del fichero
+         String linea;
+         String array[]= new String[3];
+         while((linea=br.readLine())!=null){
+             array=linea.split(",");
+             System.out.println(array[0]+array[1]+array[2]);
+             UserAccount usermap = new UserAccount(array[0],array[1],array[2]); 
+             this.server.setusers(usermap);
+            usersarray.add(usermap);
+         }
+         
+      }
+      catch(Exception e){
+         e.printStackTrace();
+      }finally{
+         // En el finally cerramos el fichero, para asegurarnos
+         // que se cierra tanto si todo va bien como si salta 
+         // una excepcion.
+         try{                    
+            if( null != fr ){   
+               fr.close();     
+            }                  
+         }catch (Exception e2){ 
+            e2.printStackTrace();
+         }
+      }
+}
+private void write(){
+    FileWriter fichero = null;
+        PrintWriter pw = null;
+        try
+        {
+            fichero = new FileWriter("./guardado.txt");
+            pw = new PrintWriter(fichero);
+ 
+            for (int i = 0; i < usersarray.size(); i++)
+                pw.println(usersarray.get(i).getUsername()+","+usersarray.get(i).getPassword()+","+usersarray.get(i).getHomeDirectory());
+ 
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+           try {
+           // Nuevamente aprovechamos el finally para 
+           // asegurarnos que se cierra el fichero.
+           if (null != fichero)
+              fichero.close();
+           } catch (Exception e2) {
+              e2.printStackTrace();
+           }
+        }
+}
+    ArrayList<UserAccount> usersarray = new ArrayList();
     private Map users;
 }
