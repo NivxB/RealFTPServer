@@ -12,6 +12,8 @@ package realftpserver;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,6 +33,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.tools.ant.util.FileUtils;
 import org.mockftpserver.core.MockFtpServerException;
 import org.mockftpserver.core.command.Command;
 import org.mockftpserver.core.command.CommandHandler;
@@ -90,8 +93,10 @@ import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 import org.mockftpserver.fake.filesystem.WindowsFakeFileSystem;
 import org.slf4j.LoggerFactory;
 
-public class WorkerRunnable implements Session, ServerConfiguration {
-
+public final class WorkerRunnable implements Session, ServerConfiguration {
+//STOR
+    //RETR
+    //MKDI
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(WorkerRunnable.class);
     protected Socket clientSocket = null;
     protected String serverText = null;
@@ -122,15 +127,18 @@ public class WorkerRunnable implements Session, ServerConfiguration {
         users = new HashMap();
         attributes = new HashMap();
         filesystem = new WindowsFakeFileSystem();
-        
-        filesystem.add(new DirectoryEntry("C:\\"));
-        filesystem.add(new FileEntry("C:\\Test.txt"));
+        addDir(new File("E:\\ftp"));
+        /*filesystem = new WindowsFakeFileSystem();
+
+         filesystem.add(new DirectoryEntry("C:\\"));
+         filesystem.add(new FileEntry("C:\\Test.txt"));
+         **/
         Resource = resource;
 
         initCommands();
 
-        UserAccount AnonUser = new UserAccount("anonymous", "nopass","C:\\");
-        
+        UserAccount AnonUser = new UserAccount("anonymous", "nopass", "E:\\ftp");
+
         AnonUser.setPasswordRequiredForLogin(false);
         users.put("anonymous", AnonUser);
 
@@ -259,7 +267,7 @@ public class WorkerRunnable implements Session, ServerConfiguration {
         setCommandHandler(CommandNames.EPSV, new EpsvCommandHandler());
         setCommandHandler(CommandNames.HELP, new HelpCommandHandler());
         setCommandHandler(CommandNames.LIST, new ListCommandHandler());
-        setCommandHandler(CommandNames.MKD, new MkdCommandHandler());
+        setCommandHandler(CommandNames.MKD, new RealMkdCommandHandler());
         setCommandHandler(CommandNames.MODE, new ModeCommandHandler());
         setCommandHandler(CommandNames.NLST, new NlstCommandHandler());
         setCommandHandler(CommandNames.NOOP, new NoopCommandHandler());
@@ -277,14 +285,14 @@ public class WorkerRunnable implements Session, ServerConfiguration {
         setCommandHandler(CommandNames.SITE, new SiteCommandHandler());
         setCommandHandler(CommandNames.SMNT, new SmntCommandHandler());
         setCommandHandler(CommandNames.STAT, new StatCommandHandler());
-        setCommandHandler(CommandNames.STOR, new StorCommandHandler());
+        setCommandHandler(CommandNames.STOR, new RealStorCommandHandler());
         setCommandHandler(CommandNames.STOU, new StouCommandHandler());
         setCommandHandler(CommandNames.STRU, new StruCommandHandler());
         setCommandHandler(CommandNames.SYST, new SystCommandHandler());
         setCommandHandler(CommandNames.TYPE, new TypeCommandHandler());
         setCommandHandler(CommandNames.USER, new UserCommandHandler());
         setCommandHandler(CommandNames.XPWD, new PwdCommandHandler());
-        setCommandHandler("XMKD",new MkdCommandHandler());
+        setCommandHandler("XMKD", new RealMkdCommandHandler());
 
         // "Special" Command Handlers
         setCommandHandler(CommandNames.CONNECT, new ConnectCommandHandler());
@@ -391,6 +399,7 @@ public class WorkerRunnable implements Session, ServerConfiguration {
         int numBytesRead = 0;
         try {
             while (numBytesRead < numBytes) {
+                
                 int b = dataInputStream.read();
                 if (b == -1) {
                     break;
@@ -476,5 +485,24 @@ public class WorkerRunnable implements Session, ServerConfiguration {
     @Override
     public String getHelpText(String name) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public void addDir(File dir) {
+
+        filesystem.add(new DirectoryEntry(dir.getAbsolutePath()));
+        for (File file : dir.listFiles()) {
+            try {
+                if (file.isFile()) {
+                    filesystem.add(new FileEntry(file.getAbsolutePath(), FileUtils.readFully(new FileReader(file))));
+                } else if (file.isDirectory() && null != file) {
+                    addDir(file);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        //fakeFtpServer.setFileSystem(fileSystem);
     }
 }
