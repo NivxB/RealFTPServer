@@ -23,10 +23,11 @@ public class MainFTPSERVER extends javax.swing.JFrame {
      */
     public MainFTPSERVER() {
         initComponents();
-        server = new ThreadPooledServer(21);
-        new Thread(server).start();
-        startTable("C:\\FTP\\DATA");
         users = new HashMap();
+        server = new ThreadPooledServer(21,users);
+        new Thread(server).start();
+        startTable(ThreadPooledServer.HOME_DIR);
+        
     }
 
     /**
@@ -274,7 +275,7 @@ public class MainFTPSERVER extends javax.swing.JFrame {
 
     private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
         // Se crea el nuevo usuario
-            File dir = new File("C:\\FTP\\DATA\\"+username_field.getText());
+            File dir = new File(ThreadPooledServer.HOME_DIR+"\\"+username_field.getText());
             if (!dir.exists()) {
             try{
                 dir.mkdir();
@@ -283,10 +284,11 @@ public class MainFTPSERVER extends javax.swing.JFrame {
                 //handle it
             }        
             }
-            UserAccount user = new UserAccount(username_field.getText(),password_field.getText(),"C:\\FTP\\DATA\\"+username_field.getText());
+            server.addUserDir(username_field.getText());
+            UserAccount user = new UserAccount(username_field.getText(),password_field.getText(),ThreadPooledServer.HOME_DIR+"\\"+username_field.getText());
             this.server.setusers(user);
-            this.users.put(evt, evt);
-            JOptionPane.showMessageDialog(this, "El usuario fue ingresado correctamente.", "Nuevo usuario", JOptionPane.INFORMATION_MESSAGE);
+            //this.users.put(evt, evt);
+            JOptionPane.showMessageDialog(this.CrearUsuario, "El usuario fue ingresado correctamente.", "Nuevo usuario", JOptionPane.INFORMATION_MESSAGE);
             CrearUsuario.setVisible(false);
             fullname_field.setText("");
             username_field.setText("");
@@ -294,7 +296,7 @@ public class MainFTPSERVER extends javax.swing.JFrame {
             password_field.setText("");
             password2_field.setText("");
             
-            startTable("C:\\FTP\\DATA");
+            startTable(ThreadPooledServer.HOME_DIR);
             
             
            

@@ -120,14 +120,13 @@ public final class WorkerRunnable implements Session, ServerConfiguration {
     //  protected BufferedWriter Output = null;
 //protected DataOutputStream Output = null;
 
-    public WorkerRunnable(Socket clientSocket, String serverText, ResourceBundle resource,Map users) throws IOException {
+    public WorkerRunnable(Socket clientSocket, String serverText, ResourceBundle resource,Map users, WindowsFakeFileSystem FS) throws IOException {
         this.clientSocket = clientSocket;
         this.serverText = serverText;
         this.commands = new HashMap();
         this.users = users;
         attributes = new HashMap();
-        filesystem = new WindowsFakeFileSystem();
-        addDir(new File("E:\\ftp"));
+        filesystem = FS;
         /*filesystem = new WindowsFakeFileSystem();
 
          filesystem.add(new DirectoryEntry("C:\\"));
@@ -136,8 +135,11 @@ public final class WorkerRunnable implements Session, ServerConfiguration {
         Resource = resource;
 
         initCommands();
-        UserAccount AnonUser = new UserAccount("anonymous", "nopass","C:\\");
-        UserAccount UserX= new UserAccount("juan","pass","C:\\");
+        //((DirectoryEntry)filesystem.getEntry(ThreadPooledServer.HOME_DIR+"\\anon")).setPermissionsFromString("rwx------");
+        ((DirectoryEntry)filesystem.getEntry(ThreadPooledServer.HOME_DIR+"\\anon")).setOwner("anonymous");
+        UserAccount AnonUser = new UserAccount("anonymous", "nopass",ThreadPooledServer.HOME_DIR+"\\anon");
+        
+        UserAccount UserX= new UserAccount("juan","pass",ThreadPooledServer.HOME_DIR+"\\juan");
         AnonUser.setPasswordRequiredForLogin(false);
         UserX.setPasswordRequiredForLogin(true);
         users.put("anonymous", AnonUser);
@@ -488,22 +490,5 @@ public final class WorkerRunnable implements Session, ServerConfiguration {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public void addDir(File dir) {
 
-        filesystem.add(new DirectoryEntry(dir.getAbsolutePath()));
-        for (File file : dir.listFiles()) {
-            try {
-                if (file.isFile()) {
-                    filesystem.add(new FileEntry(file.getAbsolutePath(), FileUtils.readFully(new FileReader(file))));
-                } else if (file.isDirectory() && null != file) {
-                    addDir(file);
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        //fakeFtpServer.setFileSystem(fileSystem);
-    }
 }
